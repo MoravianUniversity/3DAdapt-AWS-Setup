@@ -34,46 +34,44 @@ sudo dnf -y install make cmake gcc g++ patchelf itstool \
 
 ##### Clone OpenSCAD #####
 # TODO: Wish this wasn't based off of master, but the only other source available is too old for customizer params
-git clone https://github.com/openscad/openscad.git
-cd openscad
+rm -rf openscad
+git clone https://github.com/openscad/openscad.git && cd openscad && git submodule update --init --recursive || exit 1
 OpenSCAD_DIR="$PWD"
-git submodule update --init --recursive
 
 
 ##### We have to build some libraries that we don't have on Amazon Linux #####
-source ./scripts/setenv-unibuild.sh
+source ./scripts/setenv-unibuild.sh || exit 1
 unset GLEWDIR
 
 # ragel - not sure if this library is actually needed? (24M binary)
-source ./scripts/common-build-dependencies.sh
+source ./scripts/common-build-dependencies.sh || exit 1
 build_ragel 6.10
 cd "$OpenSCAD_DIR"
 
 # CGAL (46M in include)
-./scripts/uni-build-dependencies.sh cgal # Note: messes up gmp.h detection with dependency checker, but building is okay
+./scripts/uni-build-dependencies.sh cgal || exit 1  # Note: messes up gmp.h detection with dependency checker, but building is okay
 
 # opencsg (~170K in include and lib)
 # TODO: maybe just do this one at the system level (but still include it in the package, or as a static library)?
-./scripts/uni-build-dependencies.sh opencsg  # automatic cannot run "install", code copied here
+./scripts/uni-build-dependencies.sh opencsg || exit 1  # automatic cannot run "install", code copied here
 cd "$OPENSCAD_LIBRARIES/src/OpenCSG-"*/ &&
   mkdir -p "$DEPLOYDIR/lib" &&
   mkdir -p "$DEPLOYDIR/include" &&
   cp -P lib/* "$DEPLOYDIR/lib" &&
-  cp -P include/* "$DEPLOYDIR/include"
+  cp -P include/* "$DEPLOYDIR/include" || exit 1
 cd "$OpenSCAD_DIR"
 
 
 ##### Build OpenSCAD #####
-mkdir -p build && cd build
-cmake .. -DHEADLESS=ON -DEXPERIMENTAL=ON -DENABLE_TESTS=OFF
-make -j $(nproc)
-
-sudo make install >installed.txt
-mkdir -p "package/lib64" && cp -P "$OPENSCAD_LIBRARIES/lib"/* package/lib64
-for file in $(grep "^-- \(Installing\|Up-to-date\): /usr/local/" installed.txt | grep -v "/icons/\|/fonts/\|/examples/\|/locales/\|/editor/\|/templates/" | cut -b 27-); do
-  mkdir -p "package/$(dirname "$file")" && cp -P "/usr/local/$file" "package/$file"
-done
+mkdir -p build && cd build &&
+  cmake .. -DHEADLESS=ON -DEXPERIMENTAL=ON -DENABLE_TESTS=OFF &&
+  make -j $(nproc) &&
+  sudo make install >installed.txt &&
+  mkdir -p "package/lib64" && cp -P "$OPENSCAD_LIBRARIES/lib"/* package/lib64 &&
+  for file in $(grep "^-- \(Installing\|Up-to-date\): /usr/local/" installed.txt | grep -v "/icons/\|/fonts/\|/examples/\|/locales/\|/editor/\|/templates/" | cut -b 27-); do
+    mkdir -p "package/$(dirname "$file")" && cp -P "/usr/local/$file" "package/$file"
+  done &&
 # shellcheck disable=SC2016
-patchelf --set-rpath '$ORIGIN/../lib64' package/bin/openscad
-touch package/share/openscad/locale
-cd package && tar -czf ../../../openscad-"$(arch)"-linux-gnu.tar.gz --owner=0 --group=0 -- * && cd ../../..
+  patchelf --set-rpath '$ORIGIN/../lib64' package/bin/openscad &&
+  touch package/share/openscad/locale &&
+  cd package && tar -czf ../../../openscad-"$(arch)"-linux-gnu.tar.gz --owner=0 --group=0 -- * && cd ../../..

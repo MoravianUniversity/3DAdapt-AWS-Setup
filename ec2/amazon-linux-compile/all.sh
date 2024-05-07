@@ -24,7 +24,10 @@ for script in draco.sh openctm.sh double-conversion.sh openscad.sh f3d.sh; do
         wget -O "$script" "$source/$script"
     fi
     chmod +x $script
-    ./$script
+    if ! ./$script; then
+        echo "Failed to run build $script"
+        exit 1
+    fi
 done
 
 echo

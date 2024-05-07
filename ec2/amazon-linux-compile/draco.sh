@@ -10,7 +10,10 @@ DRACO_VERSION="1.5.7"
 
 sudo dnf -y install cmake gcc g++
 
-wget -O "draco-$DRACO_VERSION.tar.gz" "https://github.com/google/draco/archive/refs/tags/$DRACO_VERSION.tar.gz" &&
-  tar -xzf "draco-$DRACO_VERSION.tar.gz" && cd "draco-$DRACO_VERSION" &&
+if [ ! -f draco-$DRACO_VERSION.tar.gz ]; then
+  wget -O "draco-$DRACO_VERSION.tar.gz" "https://github.com/google/draco/archive/refs/tags/$DRACO_VERSION.tar.gz" || exit 1
+fi
+rm -rf "draco-$DRACO_VERSION"
+tar -xzf "draco-$DRACO_VERSION.tar.gz" && cd "draco-$DRACO_VERSION" &&
   mkdir build && cd build && cmake ../ && make -j $(nproc) && mkdir bin && cp draco_decoder-* bin/draco_decoder &&
 	tar -czf ../../draco_decoder-"$DRACO_VERSION"-"$(arch)"-linux-gnu.tar.gz --owner=0 --group=0 bin && cd ../..

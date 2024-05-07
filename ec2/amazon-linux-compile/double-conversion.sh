@@ -12,9 +12,12 @@ DC_VERSION="3.3.0"
 
 sudo dnf -y install cmake gcc g++
 
-wget -O "double-conversion-$DC_VERSION.tar.gz" https://github.com/google/double-conversion/archive/refs/tags/v$DC_VERSION.tar.gz &&
-  tar -xzf "double-conversion-$DC_VERSION.tar.gz" && cd "double-conversion-$DC_VERSION"
-  
+if [ ! -f double-conversion-$DC_VERSION.tar.gz ]; then
+  wget -O "double-conversion-$DC_VERSION.tar.gz" https://github.com/google/double-conversion/archive/refs/tags/v$DC_VERSION.tar.gz || exit 1
+fi
+rm -rf "double-conversion-$DC_VERSION"
+tar -xzf "double-conversion-$DC_VERSION.tar.gz" && cd "double-conversion-$DC_VERSION" || exit 1
+
 # Create static library
 cmake . && make -j $(nproc) && sudo make install >installed-static.txt
 
