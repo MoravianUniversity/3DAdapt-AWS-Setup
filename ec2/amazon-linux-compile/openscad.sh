@@ -57,7 +57,7 @@ mkdir -p build && cd build &&
   cmake .. -DHEADLESS=ON -DEXPERIMENTAL=ON -DENABLE_TESTS=OFF -DUSE_BUILTIN_OPENCSG=ON &&
   make -j $(nproc) &&
   sudo make install >installed.txt &&
-  mkdir -p "package/lib64" && cp -P "$OPENSCAD_LIBRARIES/lib"/* package/lib64 &&
+  mkdir -p "package/lib64" &&
   for file in $(grep "^-- \(Installing\|Up-to-date\): /usr/local/" installed.txt | grep -v "/icons/\|/fonts/\|/examples/\|/locales/\|/editor/\|/templates/" | cut -b 27-); do
     mkdir -p "package/$(dirname "$file")" && cp -P "/usr/local/$file" "package/$file"
   done &&
