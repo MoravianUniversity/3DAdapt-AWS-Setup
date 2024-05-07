@@ -13,7 +13,7 @@
 # * the compiled OpenSCAD does NOT require Qt and is completely headless
 #   * this causes an issue in that the openscad binary apparently has no idea where it is
 #     and thus fails to load resources UNLESS it is run with a full path (e.g. `which openscad`)
-# * It also installs its own opencsg library and includes the MCAD library but does not use lib3mf
+# * also installs its own opencsg library and includes the MCAD library but does not use lib3mf
 
 # shellcheck disable=SC2024,SC2164
 
@@ -24,10 +24,10 @@ sudo dnf -y install make cmake gcc g++ patchelf itstool \
 
 # Missing:
 #   double-conversion-devel (see double-conversion.sh)
-#   opencsg-devel  -  built here
+#   opencsg-devel  -  built "inline", see https://github.com/openscad/openscad/pull/4596
 #   CGAL-devel     -  built here
 #   (qt5-qtbase-devel and qscintilla-qt5-devel, but we don't want a GUI)
-#   ragel          -  not available in any repo, may not actually be needed
+#   ragel          -  not available in any repo, needed for something related to harfbuzz (but maybe only if OpenSCAD has to compile, which it doesn't)
 # Optional:
 #   ImageMagick
 
@@ -43,7 +43,7 @@ OpenSCAD_DIR="$PWD"
 source ./scripts/setenv-unibuild.sh || exit 1
 unset GLEWDIR
 
-# ragel - not sure if this library is actually needed? (24M binary)
+# ragel - not sure if this is actually needed (24M binary)
 source ./scripts/common-build-dependencies.sh || exit 1
 build_ragel 6.10
 cd "$OpenSCAD_DIR"
@@ -51,20 +51,10 @@ cd "$OpenSCAD_DIR"
 # CGAL (46M in include)
 ./scripts/uni-build-dependencies.sh cgal || exit 1  # Note: messes up gmp.h detection with dependency checker, but building is okay
 
-# opencsg (~170K in include and lib)
-# TODO: maybe just do this one at the system level (but still include it in the package, or as a static library)?
-./scripts/uni-build-dependencies.sh opencsg || exit 1  # automatic cannot run "install", code copied here
-cd "$OPENSCAD_LIBRARIES/src/OpenCSG-"*/ &&
-  mkdir -p "$DEPLOYDIR/lib" &&
-  mkdir -p "$DEPLOYDIR/include" &&
-  cp -P lib/* "$DEPLOYDIR/lib" &&
-  cp -P include/* "$DEPLOYDIR/include" || exit 1
-cd "$OpenSCAD_DIR"
-
 
 ##### Build OpenSCAD #####
 mkdir -p build && cd build &&
-  cmake .. -DHEADLESS=ON -DEXPERIMENTAL=ON -DENABLE_TESTS=OFF &&
+  cmake .. -DHEADLESS=ON -DEXPERIMENTAL=ON -DENABLE_TESTS=OFF -DUSE_BUILTIN_OPENCSG=ON &&
   make -j $(nproc) &&
   sudo make install >installed.txt &&
   mkdir -p "package/lib64" && cp -P "$OPENSCAD_LIBRARIES/lib"/* package/lib64 &&
