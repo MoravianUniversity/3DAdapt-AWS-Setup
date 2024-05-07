@@ -14,7 +14,7 @@ if [ ! -f "OpenCTM-$CTM_VERSION.tar.bz2" ]; then
   wget -O "OpenCTM-$CTM_VERSION.tar.bz2" "https://sourceforge.net/projects/openctm/files/OpenCTM-$CTM_VERSION/OpenCTM-$CTM_VERSION-src.tar.bz2/download" || exit 1
 fi
 rm -rf "OpenCTM-$CTM_VERSION"
-tar -xjf "OpenCTM-$CTM_VERSION" && cd "OpenCTM-$CTM_VERSION" &&
+tar -xjf "OpenCTM-$CTM_VERSION.tar.bz2" && cd "OpenCTM-$CTM_VERSION" &&
   make -f Makefile.linux openctm -j $(nproc) &&
   mkdir -p lib64 && cp lib/libopenctm.so lib64/ &&
   mkdir -p include && cp lib/openctm*.h include/ &&
