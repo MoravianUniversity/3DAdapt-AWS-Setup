@@ -19,12 +19,11 @@ scripts=(
     f3d.sh  # includes vtk
 )
 
-for script in draco.sh openctm.sh double-conversion.sh openscad.sh f3d.sh; do
+for script in "${scripts[@]}"; do
     if [ ! -f "$script" ]; then
         wget -O "$script" "$source/$script"
     fi
-    chmod +x $script
-    if ! ./$script; then
+    if ! bash $script; then
         echo "Failed to run build $script"
         exit 1
     fi
