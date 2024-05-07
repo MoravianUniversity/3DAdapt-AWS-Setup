@@ -19,12 +19,12 @@ rm -rf "double-conversion-$DC_VERSION"
 tar -xzf "double-conversion-$DC_VERSION.tar.gz" && cd "double-conversion-$DC_VERSION" || exit 1
 
 # Create static library
-cmake . && make -j $(nproc) && sudo make install >installed-static.txt
+#cmake . && make -j $(nproc) && sudo make install >installed-static.txt
 
 # Create shared library
-# cmake . -DBUILD_SHARED_LIBS=ON && make -j $(nproc) && sudo make install >installed-shared.txt &&
-#  for file in $(grep "^-- \(Installing\|Up-to-date\): /usr/local/" installed-shared.txt | cut -b 27-); do
-#    mkdir -p "package/$(dirname "$file")" && cp -P "/usr/local/$file" "package/$file"
-#  done && cd package &&
-#  tar -czf ../../double-conversion-"$DC_VERSION"-"$(arch)"-linux-gnu.tar.gz --owner=0 --group=0 -- * &&
-#  cd ../..
+cmake . -DBUILD_SHARED_LIBS=ON && make -j $(nproc) && sudo make install >installed-shared.txt &&
+ for file in $(grep "^-- \(Installing\|Up-to-date\): /usr/local/" installed-shared.txt | cut -b 27-); do
+   mkdir -p "package/$(dirname "$file")" && cp -P "/usr/local/$file" "package/$file"
+ done && cd package &&
+ tar -czf ../../double-conversion-"$DC_VERSION"-"$(arch)"-linux-gnu.tar.gz --owner=0 --group=0 -- * &&
+ cd ../..

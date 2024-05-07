@@ -14,7 +14,7 @@ source="https://raw.githubusercontent.com/MoravianUniversity/3DAdapt-AWS-Setup/m
 scripts=(
     draco.sh
     openctm.sh
-    double-conversion.sh  # needed for building openscad and vtk, not installed on final server
+    double-conversion.sh  # needed for openscad and vtk (vtk cannot use static library either)
     openscad.sh
     f3d.sh  # includes vtk
 )
