@@ -7,7 +7,7 @@
 
 # Install common build dependencies
 sudo dnf -y group install "Development Tools"
-sudo dnf -y install cmake make git gcc g++ pkgconfig curl wget gettext
+sudo dnf -y install cmake make git gcc g++ pkgconfig gettext
 
 # Download and run each script
 source="https://raw.githubusercontent.com/MoravianUniversity/3DAdapt-AWS-Setup/main/ec2/amazon-linux-compile"
