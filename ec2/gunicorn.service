@@ -1,0 +1,21 @@
+# See https://docs.gunicorn.org/en/latest/deploy.html#systemd
+
+[Unit]
+Description=gunicorn daemon
+Requires=gunicorn.socket
+After=network.target
+
+[Service]
+Type=notify
+User=ec2-user
+Group=ec2-user
+RuntimeDirectory=gunicorn
+WorkingDirectory=/home/ec2-user/3DAdapt
+ExecStart=/home/ec2-user/3DAdapt/server/venv/bin/gunicorn -w $WORKERS --log-level warning server
+ExecReload=/bin/kill -s HUP $MAINPID
+KillMode=mixed
+TimeoutStopSec=5
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target
