@@ -11,6 +11,8 @@ Type=forking
 User=ec2-user
 Group=ec2-user
 EnvironmentFile=/etc/conf.d/celery
+RuntimeDirectory=celery
+LogsDirectory=celery
 WorkingDirectory=/home/ec2-user/3DAdapt
 ExecStart=/bin/sh -c '${CELERY_BIN} -A $CELERY_APP multi start $CELERYD_NODES \
     --pidfile=${CELERYD_PID_FILE} --logfile=${CELERYD_LOG_FILE} \
