@@ -18,29 +18,29 @@
 
 
 # if not already set by the calling script, set the source URL for downloading packages and other scripts
-[ -z "$source" ] && source="https://raw.githubusercontent.com/MoravianUniversity/3DAdapt-AWS-Setup/main/packages"
+[ -z "$source" ] && source="https://github.com/MoravianUniversity/3DAdapt-AWS-Setup/raw/main/packages"
 [ -z "$google_font_source" ] && google_font_source="$source"
 
 
 # Helper function to download files from either HTTP or S3
 function download() {
-    uri="$1"
-    output="$2"
-    [ -z "$output" ] && output="$(basename "$uri")"
-    if [[ "$uri" =~ ^s3 ]]; then
-        aws s3 cp "$uri" "$output" --no-progress || exit 1
-    else
-        wget -nv -O "$output" "$uri" || exit 1
-    fi
+  uri="$1"
+  output="$2"
+  [ -z "$output" ] && output="$(basename "$uri")"
+  if [[ "$uri" =~ ^s3 ]]; then
+    aws s3 cp "$uri" "$output" --no-progress || return 1
+  else
+    wget -nv -O "$output" "$uri" || return 1
+  fi
 }
 
 
 # Tools for installing fonts
-sudo dnf install fontconfig mkfontscale xorg-x11-font-utils xorg-x11-server-utils
+sudo dnf install -y fontconfig mkfontscale xorg-x11-font-utils xorg-x11-server-utils
 sudo mkdir -p /usr/local/share/fonts
 
 ##### Easy to install and useful fonts (57M) #####
-sudo dnf install bitstream-vera-fonts-all dejavu*fonts-all fontawesome-fonts google-droid-fonts-all liberation-fonts oldstandard-sfd-fonts urw-base35-fonts
+sudo dnf install -y bitstream-vera-fonts-all dejavu*fonts-all fontawesome-fonts google-droid-fonts-all liberation-fonts oldstandard-sfd-fonts urw-base35-fonts
 # sudo dnf install abattis-cantarell-fonts adobe-source-*-fonts overpass*-fonts \  # all in Google Fonts OFL
 #   google-noto-sans-vf-fonts google-noto-sans-mono-vf-fonts google-noto-serif-vf-fonts google-noto-*-display*-vf-fonts google-noto-*-symbols-vf-fonts google-noto-*-symbols2-fonts google-noto-emoji-fonts
 # sudo dnf install google-roboto-slab-fonts  # all in Google Fonts Apache Licensed
