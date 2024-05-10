@@ -1,0 +1,70 @@
+{
+	"Version": "2012-10-17",
+	"Statement": [
+		{
+			"Sid": "S3ListBuckets",
+			"Effect": "Allow",
+			"Action": [
+				"s3:ListAllMyBuckets"
+			],
+			"Resource": "arn:aws:s3:::*"
+		},
+		{
+			"Sid": "S3BucketAccess",
+			"Effect": "Allow",
+			"Action": [
+				"s3:PutObject",
+				"s3:PutObjectAcl",
+				"s3:PutObjectTagging",
+				"s3:GetObject",
+				"s3:GetObjectAcl",
+				"s3:GetObjectTagging",
+				"s3:DeleteObject",
+				"s3:DeleteObjectTagging",
+				"s3:GetBucketTagging",
+				"s3:ListBucket"
+			],
+			"Resource": [
+				"arn:aws:s3:::<TODO: images S3 bucket name>/*",
+				"arn:aws:s3:::<TODO: images S3 bucket name>",
+				"arn:aws:s3:::<TODO: files S3 bucket name>/*",
+				"arn:aws:s3:::<TODO: files S3 bucket name>"
+			]
+		},
+		{
+			"Sid": "S3BucketConfAccess",
+			"Effect": "Allow",
+			"Action": [
+				"s3:GetObject",
+				"s3:GetObjectAcl",
+				"s3:GetObjectTagging",
+				"s3:GetBucketTagging",
+				"s3:ListBucket"
+			],
+			"Resource": [
+				"arn:aws:s3:::<TODO: private S3 bucket name>/*"
+			]
+		},
+		{
+			"Sid": "Route53Read",
+			"Effect": "Allow",
+			"Action": [
+				"route53:ListHostedZones",
+				"route53:GetChange"
+			],
+			"Resource": [
+				"*"
+			]
+		},
+		{
+			"Sid": "Route53Write",
+			"Effect": "Allow",
+			"Action": [
+				"route53:ChangeResourceRecordSets"
+			],
+			"Resource": [
+				"arn:aws:route53:::hostedzone/<TODO: hostedzone-id>"
+			]
+		}
+	]
+}
