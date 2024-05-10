@@ -54,7 +54,7 @@ sudo rpm -i https://downloads.sourceforge.net/project/mscorefonts2/rpms/msttcore
 ##### Microsoft look-alike fonts #####
 # TODO: should I move the included local.conf.arkpandora to /etc/fonts/conf.d/99-arkpandora.conf?
 ARKPANDORA_VERSION="2.04"
-wget -O fonts-arkpandora.tar.gz "http://ftp.debian.org/debian/pool/main/f/fonts-arkpandora/fonts-arkpandora_$ARKPANDORA_VERSION.orig.tar.gz" && \
+download "http://ftp.debian.org/debian/pool/main/f/fonts-arkpandora/fonts-arkpandora_$ARKPANDORA_VERSION.orig.tar.gz" fonts-arkpandora.tar.gz && \
   tar -xzf fonts-arkpandora.tar.gz && \
   sudo mv "ttf-arkpandora-$ARKPANDORA_VERSION" /usr/local/share/fonts/arkpandora && \
   rm -rf fonts-arkpandora.tar.gz
@@ -65,8 +65,8 @@ sudo rpm -i http://fedora.mirror.constant.com/fedora/linux/releases/38/Everythin
 sudo rpm -i http://fedora.mirror.constant.com/fedora/linux/releases/38/Everything/aarch64/os/Packages/g/google-go-fonts-0.5.0-1.fc38.noarch.rpm
 
 ##### OpenSans Condensed ##### (confused about its Google Font status)
-wget -O open-sans-condensed.zip https://www.fontsquirrel.com/fonts/download/open-sans-condensed &&
-  mkdir open-sans-condensed && cd open-sans-condensed && unzip ../open-sans-condensed.zip && cd .. \
+download https://www.fontsquirrel.com/fonts/download/open-sans-condensed open-sans-condensed.zip &&
+  mkdir open-sans-condensed && cd open-sans-condensed && unzip ../open-sans-condensed.zip && cd .. && \
   sudo mv open-sans-condensed /usr/local/share/fonts/open-sans-condensed && \
   rm -rf open-sans-condensed.zip
 
@@ -75,12 +75,15 @@ wget -O open-sans-condensed.zip https://www.fontsquirrel.com/fonts/download/open
 # However, it is 2.22GB decompressed... it can be cleaned up a bit though, see gather/google-fonts.sh for re-packaging it
 for lib in apache ufl ofl; do  # 18M, 4M, and 1.9G** decompressed
   download "$google_font_source/google-fonts-$lib.tar.xz" &&
-    tar -xJf "google-fonts-$lib.tar.xz" && sudo mv "$lib"/* /usr/local/share/fonts && rm -rf "$lib"
+    tar -xJf "google-fonts-$lib.tar.xz" && sudo mv "$lib"/* /usr/local/share/fonts && \
+    rm -rf "$lib" && rm -rf "google-fonts-$lib.tar.xz"
 done
 
 # Find all fontconfig conf files for all of the dnf-installable fonts
 # Helps with fontconfig matching and alternate names, see gather/fontconfig-confs.sh for generating the tarball and more information
-download "$source/fontconfig-confs.tar.gz" && sudo tar -xzf fontconfig-confs.tar.gz --skip-old-files --no-same-owner -C /
+download "$source/fontconfig-confs.tar.gz" &&
+  sudo tar -xzf fontconfig-confs.tar.gz --skip-old-files --no-same-owner -C / &&
+  rm -rf fontconfig-confs.tar.gz
 
 
 ##### Make sure the cache is updated #####
