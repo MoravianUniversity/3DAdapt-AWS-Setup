@@ -24,6 +24,9 @@
 #   -w: number of workers for gunicorn (rec between 2*N+1 and 4*N, 4-12 can handle hundreds to
 #       thousands of requests/second), default is 3*N where N is the number of CPUs (server only)
 
+# If not running on a real EC2 instance, you likely want to run aws configure before running this
+# script so that you can access AWS resources like S3 buckets and Route 53.
+
 # Get the command line arguments
 background_worker=false
 server=false
@@ -40,11 +43,11 @@ while getopts "bsraR:p:c:s:w:" opt; do
     s) server=true ;;
     r) redis=true ;;
     a) background_worker=true; server=true; redis=true ;;
-	  R) repo="$OPTARG" ;;
+      R) repo="$OPTARG" ;;
     p) source="$OPTARG" ;;
-	  c) config_url="$OPTARG" ;;
+      c) config_url="$OPTARG" ;;
     s) ssl_method="$OPTARG" ;;
-	  w) workers="$OPTARG" ;;
+      w) workers="$OPTARG" ;;
     *) echo "Invalid option: -$opt" >&2; exit 1 ;;
   esac
 done
@@ -74,7 +77,7 @@ function download_and_install() {
   temp=$(mktemp)
   download "$scripts/$file" "$temp" && sudo mv "$temp" "$dest" || return 1
   sudo chown root:root "$dest"
-  sudo chmod 666 "$dest"
+  sudo chmod 644 "$dest"
 }
 function download_and_extract() {
   # Download a file from $source then extracts as root; default extracts to /usr/local
@@ -86,10 +89,10 @@ function download_and_extract() {
 
 ##### Install System Packages #####
 # Packages needed on all machines
-sudo dnf install -y git python3.11 pip
+sudo dnf install -y git python3.11 python3.11-pip
 
 # Packages for specific depolyments
-$server && sudo dnf install -y nginx certbot python3-certbot-nginx python-certbot-dns-route53
+$server && sudo dnf install -y nginx
 $redis && sudo dnf install -y redis6
 $background_worker && sudo dnf install -y \
   xorg-x11-server-Xorg xorg-x11-server-Xvfb glew freeglut libglvnd-opengl mesa-libOSMesa mesa-libGLU libXmu \
@@ -101,7 +104,7 @@ $background_worker && sudo dnf install -y \
 ##### Install Third Party Packages #####
 # See ec2/amazon-linux-compile/*.sh for compiling these.
 # Only needed on the background worker
-if $background; then
+if $background_worker; then
   tools=("double-conversion-3.3.0" "openscad" "openctm-1.0.3" "draco_decoder-1.5.7" "vtk-9.3.0" "f3d-2.4.0")
   for tool in "${tools[@]}"; do
     download_and_extract "$tool-$(arch)-linux-gnu.tar.gz"
@@ -111,7 +114,6 @@ if $background; then
   echo "/usr/local/lib64" | sudo tee /etc/ld.so.conf.d/local.conf &>/dev/null
   sudo ldconfig
 fi
-
 
 # Install OpenSCAD fonts and libraries on the background worker
 # See ec2/fonts.sh and ec2/openscad-libs.sh for more information
@@ -126,7 +128,7 @@ fi
 # If SSH make sure to add the keys to the system first
 # Private repos only work with SSH urls
 GIT_SSH_COMMAND="ssh -o StrictHostKeyChecking=accept-new" \
-	git clone "$repo" || exit 1
+    git clone "$repo" || exit 1
 
 
 ##### Setup the Server #####
@@ -136,13 +138,11 @@ source venv/bin/activate
 pip install --upgrade wheel  # Flask-Mail requires this to be installed first to avoid warnings
 pip install -r requirements-base.txt  # TODO: likely not all of these are needed for all deployments
 pip install -r requirements-optional.txt  # TODO: same as above
-if $server; then
-  pip install gunicorn  # gunicorn WSGI server
-fi
+$server && pip install gunicorn  # gunicorn WSGI server
 pip cache purge  # clean up pip cache
 
 # Link to third party tools just in case
-if $background; then
+if $background_worker; then
   mkdir -p third-party/bin third-party/lib
   ln -sf /usr/local/bin/draco_decoder third-party/bin
   ln -sf /usr/local/lib64/libopenctm.so third-party/lib
@@ -157,8 +157,8 @@ fi
 
 ##### Configuration File #####
 no_config=false
-if ! [ -z "$config" ]; then
-  download $config
+if ! [ -z "$config_url" ]; then
+  download $config_url
 elif ! [ -f "config.py" ]; then
   no_config=true
   cat >config.py <<EOF
@@ -166,6 +166,62 @@ from .config_default import *
 
 # TODO: setup up configuration
 EOF
+fi
+
+
+##### Setup Certificates #####
+if $server; then
+  function setup_certbot() {
+    # Install prerequisites and setup virtual environment
+    sudo dnf install -y augeas-libs
+    sudo rm -rf /opt/certbot/  # reinstall
+    sudo python3 -m venv /opt/certbot/
+    sudo /opt/certbot/bin/pip install --upgrade pip
+
+    # Install certbot
+    local arg=""
+    [ -n "$1" ] && arg="certbot-dns-$1"
+    sudo /opt/certbot/bin/pip install certbot certbot-nginx $arg
+    sudo ln -sf /opt/certbot/bin/certbot /usr/bin/certbot
+
+    # Install timer
+    # TODO: remove previous entry if it exists
+    echo "0 0,12 * * * root /opt/certbot/bin/python -c 'import random, time; time.sleep(random.random() * 3600)' && sudo certbot renew -q" | sudo tee -a /etc/crontab > /dev/null
+
+    # Get information needed for running certbot
+    email="$(cd .. && python3 -c "import server.config; print(server.config.CONTACT_RECIPIENT)")"
+    download "$scripts/nginx.conf" "$HOME/nginx.conf"
+    domains=($(grep '^ *server_name' "$HOME/nginx.conf" | sed 's/^ *server_name \+//' | sed 's/[;#].*$//'))
+    domain_args=()
+    for d in "${domains[@]}"; do domain_args+=( "-d" "$d" ); done
+    domain="${domains[0]}"
+  }
+
+  function run_certbot() {
+    # Run certbot
+    sudo certbot certonly -m "$email" --agree-tos -n -i nginx "$@" "${domain_args[@]}"
+  }
+
+  if [ "$ssl_method" = "route53" ]; then
+    setup_certbot route-53 && \
+      run_certbot --dns-route53 --dns-route53-propagation-seconds 20
+  elif [[ "$ssl_method" == "cf:"* ]]; then  # Cloudflare DNS with API token
+    setup_certbot cloudflare
+    api_token="${ssl_method#cf:}"
+    conf="/etc/letsencrypt/tokens/cloudflare-$domain.ini"
+    sudo mkdir -m 700 -p "$(dirname "$conf")"
+    echo "dns_cloudflare_api_token = $api_token" | sudo tee "$conf" >/dev/null
+    sudo chmod 600 "$conf"
+    run_certbot --dns-cloudflare --dns-cloudflare-propagation-seconds 20 --dns-cloudflare-credentials "$conf"
+  elif [ "$ssl_method" = "http" ]; then
+    sudo systemctl enable --now nginx  # need to start it now
+    setup_certbot && run_certbot --preferred-challenges http
+  elif [[ "$ssl_method" == *"/"* ]]; then  # HTTP/S3 URL
+    file="certificates.tar.gz"
+    download "$ssl_method" "$file" && sudo tar -xvzf "$file" --no-same-owner -C "/etc"
+  else
+    echo "Unable to set up SSL certificates, make sure they are set up manually if needed"
+  fi
 fi
 
 
@@ -183,50 +239,13 @@ if $server; then
   services+=("gunicorn.service" "gunicorn.socket" "nginx")
   download_and_install "gunicorn.service" && sudo sed -i "s/\$WORKERS/$workers/" /etc/systemd/system/gunicorn.service
   download_and_install "gunicorn.socket"
-  download_and_install "nginx.conf" "/etc/nginx/conf.d/gunicorn.conf"
+  sudo mv "$HOME/nginx.conf" "/etc/nginx/conf.d/gunicorn.conf"
+  sudo chown root:root "/etc/nginx/conf.d/gunicorn.conf"
+  sudo chmod 644 "/etc/nginx/conf.d/gunicorn.conf"
   download_and_install "block-hostname-spoofing.conf" "/etc/nginx/default.d/block-hostname-spoofing.conf"
 fi
 if $redis; then
   services+=("redis6")
-fi
-
-
-##### Setup Certificates #####
-if $server; then
-  function get_server_info() {
-    email="$(cd .. && python3 -c "import server.config; print(server.config.CONTACT_RECIPIENT)")"
-    domains=($(grep '^ *server_name' /etc/nginx/conf.d/gunicorn.conf | sed 's/^ *server_name \+//' | sed 's/[;#].*$//'))
-    domain_args=()
-    for d in "${domains[@]}"; do domain_args+=( "-d" "$d" ); done
-    domain="${domains[0]}"
-  }
-
-  if [ "$ssl_method" = "route53" ]; then
-    get_server_info
-    sudo certbot certonly -m "$email" --agree-tos -n -i nginx \
-      --dns-route53 --dns-route53-propagation-seconds 20 "${domain_args[@]}"
-  elif [ "$ssl_method" = "http" ]; then
-    get_server_info
-    sudo systemctl enable --now nginx  # need to start it now
-    sudo certbot certonly -m "$email" --agree-tos -n -i nginx \
-      --preferred-challenges http "${domain_args[@]}"
-  elif [[ "$ssl_method" == *"/"* ]]; then  # HTTP/S3 URL
-    file="certificates.tar.gz"
-    download "$ssl_method" "$file" && sudo tar -xvzf "$file" --no-same-owner -C "/etc"
-  elif [[ "$ssl_method" == "cf:"* ]]; then  # Cloudflare DNS with API token
-    # manually install certbot-dns-cloudflare (not provided by Amazon Linux 2023)
-    /usr/bin/python3 -m pip install certbot-dns-cloudflare
-    get_server_info
-    api_token="${ssl_method#cf:}"
-    conf="/etc/letsencrypt/tokens/cloudflare-$domain.ini"
-    sudo mkdir -m 700 -p "$(dirname "$conf")"
-    echo "dns_cloudflare_api_token = $api_token" | sudo tee "$conf" >/dev/null
-    sudo chmod 600 "$conf"
-    sudo certbot certonly -m "$email" --agree-tos -n -i nginx \
-      --dns-cloudflare --dns-cloudflare-propagation-seconds 20 --dns-cloudflare-credentials "$conf" "${domain_args[@]}"
-  else
-    echo "Unable to set up SSL certificates, make sure they are set up manually if needed"
-  fi
 fi
 
 
