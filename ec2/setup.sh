@@ -190,8 +190,9 @@ if $server; then
 
     # Get information needed for running certbot
     email="$(cd .. && python3 -c "import server.config; print(server.config.CONTACT_RECIPIENT)")"
-    download "$scripts/nginx.conf" "$HOME/nginx.conf"
-    domains=($(grep '^ *server_name' "$HOME/nginx.conf" | sed 's/^ *server_name \+//' | sed 's/[;#].*$//'))
+    domains=( "$(cd .. && python3 -c "import server.config; print(server.config.SERVER_NAME)")" )
+    #download "$scripts/nginx.conf" "$HOME/nginx.conf"
+    #domains=($(grep '^ *server_name' "$HOME/nginx.conf" | sed 's/^ *server_name \+//' | sed 's/[;#].*$//'))
     domain_args=()
     for d in "${domains[@]}"; do domain_args+=( "-d" "$d" ); done
     domain="${domains[0]}"
@@ -238,11 +239,12 @@ fi
 if $server; then
   services+=("gunicorn.service" "gunicorn.socket" "nginx")
   download_and_install "gunicorn.service" && sudo sed -i "s/\$WORKERS/$workers/" /etc/systemd/system/gunicorn.service
-  download_and_install "gunicorn.socket"
-  sudo mv "$HOME/nginx.conf" "/etc/nginx/conf.d/gunicorn.conf"
-  sudo chown root:root "/etc/nginx/conf.d/gunicorn.conf"
-  sudo chmod 644 "/etc/nginx/conf.d/gunicorn.conf"
   download_and_install "block-hostname-spoofing.conf" "/etc/nginx/default.d/block-hostname-spoofing.conf"
+  download_and_install "gunicorn.socket"
+  
+  server_name="$(cd .. && python3 -c "import server.config; print(server.config.SERVER_NAME)")"
+  download_and_install "nginx.conf" "/etc/nginx/conf.d/gunicorn.conf" && \
+    sed -i "s/\$SERVER_NAME/$server_name/" /etc/nginx/conf.d/gunicorn.conf
 fi
 if $redis; then
   services+=("redis6")
