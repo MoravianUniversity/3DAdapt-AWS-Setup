@@ -70,6 +70,8 @@ mkdir -p build && cd build &&
 
 
 # Test OpenScad
+# =================
+
 # cat >input.scad <<EOF
 # inner_diameter=41; 
 # outer_diameter=inner_diameter+15;
