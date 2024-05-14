@@ -100,6 +100,7 @@ Make sure all things are set up in the same region (e.g. US East (N. Virginia)).
   * You may also want to create a user with this policy as well (for on-premises testing)
     * Under the new user's Security Credentials, create an access key and secret key (you will need to save the access and secret keys somewhere safe)
 * **EC2 Setup:**
+  * Make sure you create and save a key pair when you first launch an instance
   * Compile Necessary Libraries (if not already available)
     * This must be done on a similar node as the one that will be used, but likely a little beefier since it takes a lot of RAM and hard drive space to compile
     * Launch/Create an Instance (Amazon Linux 2023 AMI using ARM, `t4g.large`, SSH allowed, 10GB EBS storage)
