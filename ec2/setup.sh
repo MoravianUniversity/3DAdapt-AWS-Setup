@@ -15,7 +15,7 @@
 #       default: https://github.com/MoravianUniversity/3DAdapt-AWS-Setup/raw/main/packages
 #   -c: HTTP/S3 URL to download config.py from, default requires you to add/edit it manually
 #
-#   -s: SSL certificate generation method (server only), one of:
+#   -S: SSL certificate generation method (server only), one of:
 #       route53 (use AWS Route 53, requires hosted zone and IAM permissions on EC2 instance)
 #       http (use HTTP challenge, requires nginx to be configured properly)
 #       HTTP/S3 URL (downloads a pre-generated certificate tarball, extracts to /etc)
@@ -37,17 +37,17 @@ scripts="https://github.com/MoravianUniversity/3DAdapt-AWS-Setup/raw/main/ec2"  
 config_url=""
 ssl_method=""
 workers=$(($(nproc) * 3))
-while getopts "bsraR:p:c:s:w:" opt; do
+while getopts "bsraR:p:c:S:w:" opt; do
   case $opt in
     b) background_worker=true ;;
     s) server=true ;;
     r) redis=true ;;
     a) background_worker=true; server=true; redis=true ;;
-      R) repo="$OPTARG" ;;
+    R) repo="$OPTARG" ;;
     p) source="$OPTARG" ;;
-      c) config_url="$OPTARG" ;;
-    s) ssl_method="$OPTARG" ;;
-      w) workers="$OPTARG" ;;
+    c) config_url="$OPTARG" ;;
+    S) ssl_method="$OPTARG" ;;
+    w) workers="$OPTARG" ;;
     *) echo "Invalid option: -$opt" >&2; exit 1 ;;
   esac
 done
