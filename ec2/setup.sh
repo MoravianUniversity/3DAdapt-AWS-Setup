@@ -133,12 +133,12 @@ GIT_SSH_COMMAND="ssh -o StrictHostKeyChecking=accept-new" \
 
 ##### Setup the Server #####
 cd 3DAdapt/server
-python3.11 -m venv venv
-source venv/bin/activate
+python3.11 -m venv venv || exit 1
+source venv/bin/activate || exit 1
 pip install --upgrade wheel  # Flask-Mail requires this to be installed first to avoid warnings
-pip install -r requirements-base.txt  # TODO: likely not all of these are needed for all deployments
-pip install -r requirements-optional.txt  # TODO: same as above
-$server && pip install gunicorn  # gunicorn WSGI server
+pip install -r requirements-base.txt || exit 1  # TODO: likely not all of these are needed for all deployments
+pip install -r requirements-optional.txt || exit 1  # TODO: same as above
+$server && pip install gunicorn || exit 1  # gunicorn WSGI server
 pip cache purge  # clean up pip cache
 
 # Link to third party tools just in case
@@ -151,7 +151,7 @@ if $background_worker; then
   ln -sf /usr/local/bin/f3d third-party/bin
   ln -sf /usr/local/lib64/libf3d.so third-party/lib
   mkdir -p venv/lib64/python3.11/site-packages
-  ln -sf /usr/local/lib64/python3.11/site-packages/f3d venv/lib64/python3.11/site-packages  # TODO: library crashes on import
+  ln -sf /usr/local/lib64/python3.11/site-packages/f3d venv/lib64/python3.11/site-packages
 fi
 
 
@@ -171,6 +171,15 @@ fi
 
 ##### Setup Certificates #####
 if $server; then
+  email="$(cd .. && python3 -c "import server.config; print(server.config.CONTACT_RECIPIENT)")"
+  domains=( "$(cd .. && python3 -c "import server.config; print(server.config.SERVER_NAME)")" )
+
+  if [ -z "$email" ] || [ -z "${domains[0]}" ]; then
+    echo "Please set the email and domain in config.py before setting up SSL certificates"
+    echo "This may also be a problem with the config.py file not being found or the MongoDB connection failing"
+    exit 1
+  fi
+
   function setup_certbot() {
     # Install prerequisites and setup virtual environment
     sudo dnf install -y augeas-libs
@@ -183,14 +192,13 @@ if $server; then
     [ -n "$1" ] && arg="certbot-dns-$1"
     sudo /opt/certbot/bin/pip install certbot certbot-nginx $arg
     sudo ln -sf /opt/certbot/bin/certbot /usr/bin/certbot
+    sudo /opt/certbot/bin/pip cache purge
 
     # Install timer
-    # TODO: remove previous entry if it exists
+    grep -q 'certbot renew' /etc/crontab && sudo sed -i '/certbot renew/d' /etc/crontab
     echo "0 0,12 * * * root /opt/certbot/bin/python -c 'import random, time; time.sleep(random.random() * 3600)' && sudo certbot renew -q" | sudo tee -a /etc/crontab > /dev/null
 
     # Get information needed for running certbot
-    email="$(cd .. && python3 -c "import server.config; print(server.config.CONTACT_RECIPIENT)")"
-    domains=( "$(cd .. && python3 -c "import server.config; print(server.config.SERVER_NAME)")" )
     #download "$scripts/nginx.conf" "$HOME/nginx.conf"
     #domains=($(grep '^ *server_name' "$HOME/nginx.conf" | sed 's/^ *server_name \+//' | sed 's/[;#].*$//'))
     domain_args=()
