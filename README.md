@@ -26,7 +26,7 @@ A basic AWS deployment requires the following (all prices assume US East (N. Vir
 * Optional: SES email server for incoming un-subscription requests (100/month, <1 KB each)
   * Estimated cost: less than $0.02/month (partially eligible for free tier)
   * Note: very few regions support SES receiving (i.e. un-subscription requests), there are workarounds for this
-  * May need to use of SNS and SQS alongside SES, but this is free (as long as there is less than 1 million requests/month)
+  * May need to use SNS and SQS alongside SES, but this is free (as long as there is less than 1 million requests/month)
 * **MongoDB-Atlas database server:**
   * Signup at [mongodb.com/pricing](https://www.mongodb.com/pricing)
   * The free shared server likely is sufficient, eventually may want serverless though
