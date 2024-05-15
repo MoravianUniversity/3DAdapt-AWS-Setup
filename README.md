@@ -1,5 +1,11 @@
-Deploying to AWS
-================
+3DAdapt AWS Deployment
+======================
+
+This repo is for notes, scripts, and packages for installing [3DAdapt](https://github.com/MoravianUniversity/3DAdapt) on AWS. This primarily utilizes EC2 and S3 services.
+
+
+AWS Components and Costs
+------------------------
 
 A basic AWS deployment requires the following (all prices assume US East (N. Virginia) region as of August 2023):
 * **EC2 instance:** t4g.small (2 CPUs, 2 GB RAM) is probably sufficient for an initial deployment or if the Celery server is on a separate, larger, machine (the background tasks are much more intensive than the web server itself)
@@ -42,7 +48,7 @@ Make sure all things are set up in the same region (e.g. US East (N. Virginia)).
     * Easier automatic SSL certificate creation
   * Advantages of Cloudfront:
     * Free (as opposed to $0.50+/month)
-    * Free and built in caching (instead of using AWS CloudFront)
+    * Free and built in basic caching (instead of using AWS CloudFront)
     * Free basic email forwarding
 * **MongoDB Setup:**
   * Sign up for the service at (mongodb.com/cloud/atlas/register)[https://www.mongodb.com/cloud/atlas/register]
