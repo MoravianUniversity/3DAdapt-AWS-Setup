@@ -244,7 +244,7 @@ if $server; then
   
   server_name="$(cd .. && python3 -c "import server.config; print(server.config.SERVER_NAME)")"
   download_and_install "nginx.conf" "/etc/nginx/conf.d/gunicorn.conf" && \
-    sed -i "s/\$SERVER_NAME/$server_name/" /etc/nginx/conf.d/gunicorn.conf
+    sudo sed -i "s/\$SERVER_NAME/$server_name/" /etc/nginx/conf.d/gunicorn.conf
 fi
 if $redis; then
   services+=("redis6")
@@ -259,4 +259,5 @@ if $no_config; then
   exit 1
 fi
 
+sudo killall nginx  # make sure it is not running before starting the services
 sudo systemctl enable --now "${services[@]}"
