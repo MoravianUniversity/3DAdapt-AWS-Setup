@@ -28,7 +28,7 @@ A basic AWS deployment requires the following (all prices assume US East (N. Vir
   * Note: very few regions support SES receiving (i.e. un-subscription requests), there are workarounds for this
   * May need to use of SNS and SQS alongside SES, but this is free (as long as there is less than 1 million requests/month)
 * **MongoDB-Atlas database server:**
-  * Signup at (mongodb.com/pricing)[https://www.mongodb.com/pricing]
+  * Signup at [mongodb.com/pricing](https://www.mongodb.com/pricing)
   * The free shared server likely is sufficient, eventually may want serverless though
 * **Hosted Zone:**
   * Each zone (domain) is $0.50/month plus a small amount based on the number of DNS requests (<$0.10/month)
@@ -51,7 +51,7 @@ Make sure all things are set up in the same region (e.g. US East (N. Virginia)).
     * Free and built in basic caching (instead of using AWS CloudFront)
     * Free basic email forwarding
 * **MongoDB Setup:**
-  * Sign up for the service at (mongodb.com/cloud/atlas/register)[https://www.mongodb.com/cloud/atlas/register]
+  * Sign up for the service at [mongodb.com/cloud/atlas/register](https://www.mongodb.com/cloud/atlas/register)
   * Create a database (free tier is sufficient) with a user that has read/write access to the database
   * Add the IP address of the EC2 instance (once you get it) to the IP access list
   * Get the connection string and save it somewhere safe
