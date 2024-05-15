@@ -23,6 +23,7 @@ A basic AWS deployment requires the following (all prices assume US East (N. Vir
     * The retrieval costs would be reduced to $0.90/month so not much different for the assumed values here, but could make a difference in other situations
 * **SES email** server for outgoing mail (3000/month, 8 KB each)
   * Estimated cost: less than $0.51/month (partially eligible for free tier)
+  * Could use an alternative (such as Brevo/Sendinblue) which can be cheaper or free, but may add branding to emails
 * Optional: SES email server for incoming un-subscription requests (100/month, <1 KB each)
   * Estimated cost: less than $0.02/month (partially eligible for free tier)
   * Note: very few regions support SES receiving (i.e. un-subscription requests), there are workarounds for this
