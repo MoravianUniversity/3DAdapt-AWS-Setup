@@ -125,6 +125,7 @@ Make sure all things are set up in the same region (e.g. US East (N. Virginia)).
     * Select `t4g.small` instance type
     * Security group with SSH, HTTP, and HTTPS allowed from anywhere/the internet
     * Create a new EBS volume with at least 5 GB of storage (sometimes it let me create ones this small, other times it insisted on 8 GB)
+  * Add the EC2 instance's public IP address to the Atlas Mongodb Network Access List
   * SSH to the EC2 machine and run (update the bucket name first):
     * NOTE: The `setup.sh` has many options for adjusting where it fetches data from and how things are set up, review its source first before running it
     * `wget "https://raw.githubusercontent.com/MoravianUniversity/3DAdapt-AWS-Setup/main/ec2/setup.sh" && bash setup.sh -c s3://<private S3 bucket name>/config.py`
